@@ -60,10 +60,9 @@ expenseForm.addEventListener("submit", async (event) => {
     await loadAppData();
   } catch (error) {
     state.error = error.message;
-    renderStatus();
   } finally {
     state.saving = false;
-    renderStatus();
+    render();
   }
 });
 
@@ -91,10 +90,9 @@ categoryForm.addEventListener("submit", async (event) => {
     await loadAppData();
   } catch (error) {
     state.error = error.message;
-    renderStatus();
   } finally {
     state.saving = false;
-    renderStatus();
+    render();
   }
 });
 
@@ -345,7 +343,6 @@ async function deleteCategory(categoryToDelete) {
     await loadAppData();
   } catch (error) {
     state.error = error.message;
-    renderStatus();
   } finally {
     state.saving = false;
     render();
@@ -365,7 +362,6 @@ async function deleteExpense(expenseId) {
     await loadAppData();
   } catch (error) {
     state.error = error.message;
-    renderStatus();
   } finally {
     state.saving = false;
     render();
