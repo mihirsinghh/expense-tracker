@@ -1,4 +1,4 @@
-const CACHE_NAME = "expense-tracker-v1";
+const CACHE_NAME = "expense-tracker-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -36,17 +36,31 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.pathname.startsWith("/api/")) {
+    return;
+  }
 
-      return fetch(event.request).then((networkResponse) => {
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse.ok) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        }
         return networkResponse;
-      });
-    })
+      })
+      .catch(() =>
+        caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return new Response("Offline", {
+            status: 503,
+            statusText: "Offline",
+          });
+        })
+      )
   );
 });
