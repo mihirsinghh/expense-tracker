@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Expense tracker</p>
+        <h1>Keep weekly spending simple.</h1>
+        <p class="hero-copy">
+          Add categories, log expenses, and switch between weekly and monthly views.
+          Weekly reporting always starts fresh on Sunday.
+        </p>
+      </div>
+      <div class="hero-card">
+        <p class="hero-label">Current period</p>
+        <p class="hero-total" id="period-total">$0.00</p>
+        <p class="hero-subtitle" id="period-label">This week</p>
+      </div>
+    </section>
+
+    <section class="panel-grid">
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Add expense</h2>
+          <p>Track one purchase at a time.</p>
+        </div>
+        <form id="expense-form" class="stack">
+          <label>
+            Amount
+            <input type="number" step="0.01" min="0" name="amount" placeholder="42.50" required>
+          </label>
+          <label>
+            Category
+            <select name="category" id="expense-category" required></select>
+          </label>
+          <label>
+            Date
+            <input type="date" name="date" id="expense-date" required>
+          </label>
+          <label>
+            Note
+            <input type="text" name="note" placeholder="Optional">
+          </label>
+          <button type="submit">Add expense</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Add category</h2>
+          <p>Create your own spending buckets.</p>
+        </div>
+        <form id="category-form" class="inline-form">
+          <input type="text" name="categoryName" placeholder="Groceries" maxlength="30" required>
+          <button type="submit">Add</button>
+        </form>
+        <div id="category-list" class="chip-row"></div>
+      </section>
+    </section>
+
+    <section class="panel">
+      <div class="dashboard-header">
+        <div>
+          <h2>Spending dashboard</h2>
+          <p>See where your money is going by week or month.</p>
+        </div>
+        <div class="toggle-group" role="tablist" aria-label="View mode">
+          <button type="button" class="toggle active" data-view="weekly">Weekly</button>
+          <button type="button" class="toggle" data-view="monthly">Monthly</button>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <article class="summary-card">
+          <p class="summary-label">Top category</p>
+          <p class="summary-value" id="top-category">None yet</p>
+        </article>
+        <article class="summary-card">
+          <p class="summary-label">Transactions</p>
+          <p class="summary-value" id="transaction-count">0</p>
+        </article>
+        <article class="summary-card">
+          <p class="summary-label">Average spend</p>
+          <p class="summary-value" id="average-spend">$0.00</p>
+        </article>
+      </div>
+
+      <div class="chart-shell">
+        <div id="chart" class="chart"></div>
+        <div id="legend" class="legend"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Recent expenses</h2>
+        <p>Newest entries first.</p>
+      </div>
+      <div id="expense-list" class="expense-list"></div>
+    </section>
+  </main>
+
+  <template id="expense-item-template">
+    <article class="expense-item">
+      <div>
+        <p class="expense-category"></p>
+        <p class="expense-note"></p>
+      </div>
+      <div class="expense-meta">
+        <p class="expense-amount"></p>
+        <p class="expense-date"></p>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
