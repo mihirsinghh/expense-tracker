@@ -39,19 +39,10 @@ select {
 
 .hero {
   display: grid;
-  grid-template-columns: 1.8fr 1fr;
+  grid-template-columns: 1fr auto;
   gap: 20px;
   align-items: stretch;
   margin-bottom: 24px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 700;
 }
 
 h1,
@@ -61,21 +52,12 @@ p {
 }
 
 h1 {
-  font-size: clamp(2.2rem, 6vw, 4.4rem);
-  line-height: 0.95;
-  max-width: 8ch;
-}
-
-.hero-copy {
-  margin-top: 14px;
-  max-width: 58ch;
-  color: var(--muted);
-  line-height: 1.6;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1;
 }
 
 .hero-card,
-.panel,
-.summary-card {
+.panel {
   background: var(--panel);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border);
@@ -168,62 +150,28 @@ button:hover {
 }
 
 .chip-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 10px;
 }
 
 .chip {
   padding: 10px 12px;
-  border-radius: 999px;
+  border-radius: 18px;
   background: rgba(201, 108, 58, 0.12);
   color: var(--text);
   font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .dashboard-header,
-.summary-grid {
+  grid-template-columns: 1fr;
   display: grid;
   gap: 16px;
-}
-
-.dashboard-header {
-  grid-template-columns: 1fr auto;
   align-items: center;
   margin-bottom: 18px;
-}
-
-.toggle-group {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(32, 26, 22, 0.08);
-}
-
-.toggle {
-  background: transparent;
-  color: var(--muted);
-  padding-inline: 18px;
-}
-
-.toggle.active {
-  background: var(--text);
-  color: white;
-}
-
-.summary-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: 20px;
-}
-
-.summary-card {
-  padding: 18px;
-}
-
-.summary-value {
-  font-size: 1.3rem;
-  margin-top: 8px;
-  font-weight: 700;
 }
 
 .chart-shell {
@@ -233,63 +181,54 @@ button:hover {
 
 .chart {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 14px;
-  align-items: end;
-  min-height: 300px;
+  min-height: 180px;
 }
 
-.chart-column {
+.breakdown-row {
   display: grid;
   gap: 10px;
-}
-
-.bar-stack {
-  min-height: 240px;
+  padding: 16px;
   border-radius: 20px;
-  padding: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(234, 221, 207, 0.5));
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(53, 36, 25, 0.08);
 }
 
-.bar-segment {
-  border-radius: 12px;
-  min-height: 10px;
+.breakdown-header,
+.breakdown-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.column-label {
-  font-size: 0.88rem;
-  color: var(--muted);
-}
-
-.column-total {
-  font-size: 0.95rem;
+.breakdown-name {
+  justify-content: flex-start;
   font-weight: 700;
 }
 
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.breakdown-bar {
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(53, 36, 25, 0.08);
 }
 
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.breakdown-fill {
+  height: 100%;
   border-radius: 999px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.66);
 }
 
 .legend-swatch {
   width: 12px;
   height: 12px;
   border-radius: 999px;
+}
+
+.column-total {
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .expense-list {
@@ -317,6 +256,24 @@ button:hover {
   text-align: right;
 }
 
+.expense-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.delete-button {
+  padding: 8px 12px;
+  background: rgba(32, 26, 22, 0.1);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.delete-button:hover {
+  background: #b94f43;
+  color: white;
+}
+
 .empty-state {
   padding: 28px;
   border-radius: 18px;
@@ -328,12 +285,19 @@ button:hover {
 @media (max-width: 840px) {
   .hero,
   .panel-grid,
-  .dashboard-header,
-  .summary-grid {
+  .dashboard-header {
     grid-template-columns: 1fr;
   }
 
-  .chart {
-    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+  .expense-item,
+  .expense-actions,
+  .breakdown-header {
+    align-items: flex-start;
+  }
+
+  .expense-item,
+  .expense-actions,
+  .breakdown-header {
+    flex-direction: column;
   }
 }

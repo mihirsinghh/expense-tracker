@@ -16,3 +16,10 @@ npm.cmd start
 ```
 
 Then open `http://localhost:3000`.
+
+## Install as an app
+
+After deploying over HTTPS, you can install it as a PWA.
+
+- On iPhone: open the site in Safari, tap Share, then tap `Add to Home Screen`.
+- On desktop Chrome/Edge: use the install button in the address bar.

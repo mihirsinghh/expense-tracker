@@ -4,23 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple Expense Tracker</title>
+  <meta name="theme-color" content="#c96c3a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Expenses">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="app-shell">
     <section class="hero">
       <div>
-        <p class="eyebrow">Expense tracker</p>
-        <h1>Keep weekly spending simple.</h1>
-        <p class="hero-copy">
-          Add categories, log expenses, and switch between weekly and monthly views.
-          Weekly reporting always starts fresh on Sunday.
-        </p>
+        <h1>Expense Tracker</h1>
       </div>
       <div class="hero-card">
-        <p class="hero-label">Current period</p>
+        <p class="hero-label">Current week</p>
         <p class="hero-total" id="period-total">$0.00</p>
-        <p class="hero-subtitle" id="period-label">This week</p>
+        <p class="hero-subtitle" id="period-label">Sunday to Saturday</p>
       </div>
     </section>
 
@@ -68,32 +70,12 @@
       <div class="dashboard-header">
         <div>
           <h2>Spending dashboard</h2>
-          <p>See where your money is going by week or month.</p>
+          <p id="dashboard-range">This week</p>
         </div>
-        <div class="toggle-group" role="tablist" aria-label="View mode">
-          <button type="button" class="toggle active" data-view="weekly">Weekly</button>
-          <button type="button" class="toggle" data-view="monthly">Monthly</button>
-        </div>
-      </div>
-
-      <div class="summary-grid">
-        <article class="summary-card">
-          <p class="summary-label">Top category</p>
-          <p class="summary-value" id="top-category">None yet</p>
-        </article>
-        <article class="summary-card">
-          <p class="summary-label">Transactions</p>
-          <p class="summary-value" id="transaction-count">0</p>
-        </article>
-        <article class="summary-card">
-          <p class="summary-label">Average spend</p>
-          <p class="summary-value" id="average-spend">$0.00</p>
-        </article>
       </div>
 
       <div class="chart-shell">
         <div id="chart" class="chart"></div>
-        <div id="legend" class="legend"></div>
       </div>
     </section>
 
@@ -112,13 +94,23 @@
         <p class="expense-category"></p>
         <p class="expense-note"></p>
       </div>
-      <div class="expense-meta">
+      <div class="expense-actions">
+        <div class="expense-meta">
         <p class="expense-amount"></p>
         <p class="expense-date"></p>
+        </div>
+        <button type="button" class="delete-button delete-expense">Delete</button>
       </div>
     </article>
   </template>
 
   <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js");
+      });
+    }
+  </script>
 </body>
 </html>
