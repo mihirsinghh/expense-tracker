@@ -56,6 +56,20 @@ h1 {
   line-height: 1;
 }
 
+.status-message {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.status-message[data-variant="error"] {
+  color: #b94f43;
+}
+
+.status-message[data-variant="success"] {
+  color: #56785b;
+}
+
 .hero-card,
 .panel {
   background: var(--panel);
@@ -272,6 +286,14 @@ button:hover {
 .delete-button:hover {
   background: #b94f43;
   color: white;
+}
+
+button:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
 }
 
 .empty-state {

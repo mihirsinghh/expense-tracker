@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { createHttpError, handleBootstrap, handleCategories, handleExpenses, parseJsonBody } = require("./lib/api");
 
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = __dirname;
@@ -17,8 +18,38 @@ const MIME_TYPES = {
   ".ico": "image/x-icon",
 };
 
-const server = http.createServer((request, response) => {
-  const urlPath = request.url === "/" ? "/index.html" : request.url;
+const server = http.createServer(async (request, response) => {
+  const parsedUrl = new URL(request.url, `http://${request.headers.host}`);
+  const pathname = parsedUrl.pathname;
+
+  if (pathname.startsWith("/api/")) {
+    try {
+      const rawBody = await readRequestBody(request);
+      const body = parseJsonBody(rawBody);
+      const query = Object.fromEntries(parsedUrl.searchParams.entries());
+
+      let data;
+      if (pathname === "/api/bootstrap") {
+        data = await handleBootstrap();
+      } else if (pathname === "/api/categories") {
+        data = await handleCategories(request.method, query, body);
+      } else if (pathname === "/api/expenses") {
+        data = await handleExpenses(request.method, query, body);
+      } else {
+        throw createHttpError(404, "API route not found.");
+      }
+
+      response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify(data));
+      return;
+    } catch (error) {
+      response.writeHead(error.status || 500, { "Content-Type": "application/json; charset=utf-8" });
+      response.end(JSON.stringify({ error: error.message || "API request failed." }));
+      return;
+    }
+  }
+
+  const urlPath = pathname === "/" ? "/index.html" : pathname;
   const safePath = path.normalize(urlPath).replace(/^(\.\.[/\\])+/, "");
   const filePath = path.join(ROOT, safePath);
 
@@ -49,3 +80,19 @@ const server = http.createServer((request, response) => {
 server.listen(PORT, () => {
   console.log(`Expense tracker running at http://localhost:${PORT}`);
 });
+
+function readRequestBody(request) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    request.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    request.on("end", () => {
+      resolve(body);
+    });
+
+    request.on("error", reject);
+  });
+}

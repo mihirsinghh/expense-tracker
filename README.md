@@ -1,12 +1,12 @@
 # Expense Tracker
 
-Simple local expense tracker app with:
+Simple expense tracker app with:
 
 - custom categories
 - expense entry form
-- weekly and monthly dashboard views
+- weekly dashboard view
 - Sunday as the start of each week
-- local browser storage so data stays on your machine
+- shared database sync across devices
 
 ## Run locally
 
@@ -16,6 +16,21 @@ npm.cmd start
 ```
 
 Then open `http://localhost:3000`.
+
+To use the synced backend locally or on Vercel, set one of these environment variables:
+
+- `POSTGRES_URL`
+- `DATABASE_URL`
+
+The app creates its tables automatically on first request.
+
+## Vercel database setup
+
+1. Create a Vercel Postgres database in your Vercel project.
+2. Make sure the project has `POSTGRES_URL` available.
+3. Deploy the app.
+
+The frontend reads and writes through `/api/bootstrap`, `/api/categories`, and `/api/expenses`, so your phone and laptop will stay in sync once the deployed app is using the shared database.
 
 ## Install as an app
 

@@ -1,14 +1,12 @@
-const STORAGE_KEYS = {
-  categories: "expense-tracker-categories",
-  expenses: "expense-tracker-expenses",
-};
-
 const DEFAULT_CATEGORIES = ["Food", "Transport", "Bills", "Fun"];
 const COLORS = ["#C96C3A", "#6F8F72", "#3F6C88", "#BC8E2A", "#905C8C", "#D05757", "#4E8F91", "#7C6A58"];
 
 const state = {
-  categories: loadData(STORAGE_KEYS.categories, DEFAULT_CATEGORIES),
-  expenses: loadData(STORAGE_KEYS.expenses, []),
+  categories: [],
+  expenses: [],
+  loading: true,
+  saving: false,
+  error: "",
 };
 
 const expenseForm = document.querySelector("#expense-form");
@@ -18,16 +16,17 @@ const expenseCategorySelect = document.querySelector("#expense-category");
 const expenseDateInput = document.querySelector("#expense-date");
 const chart = document.querySelector("#chart");
 const expenseList = document.querySelector("#expense-list");
+const syncStatus = document.querySelector("#sync-status");
 
 const periodTotal = document.querySelector("#period-total");
 const periodLabel = document.querySelector("#period-label");
 const dashboardRange = document.querySelector("#dashboard-range");
 
 expenseDateInput.value = formatDateInput(new Date());
-
 render();
+loadAppData();
 
-expenseForm.addEventListener("submit", (event) => {
+expenseForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const formData = new FormData(expenseForm);
@@ -40,21 +39,35 @@ expenseForm.addEventListener("submit", (event) => {
     return;
   }
 
-  state.expenses.unshift({
-    id: crypto.randomUUID(),
-    amount,
-    category,
-    date,
-    note,
-  });
+  try {
+    state.saving = true;
+    state.error = "";
+    renderStatus();
 
-  saveData(STORAGE_KEYS.expenses, state.expenses);
-  expenseForm.reset();
-  expenseDateInput.value = formatDateInput(new Date());
-  render();
+    await apiFetch("/api/expenses", {
+      method: "POST",
+      body: JSON.stringify({
+        id: crypto.randomUUID(),
+        amount,
+        category,
+        date,
+        note,
+      }),
+    });
+
+    expenseForm.reset();
+    expenseDateInput.value = formatDateInput(new Date());
+    await loadAppData();
+  } catch (error) {
+    state.error = error.message;
+    renderStatus();
+  } finally {
+    state.saving = false;
+    renderStatus();
+  }
 });
 
-categoryForm.addEventListener("submit", (event) => {
+categoryForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const formData = new FormData(categoryForm);
@@ -64,24 +77,84 @@ categoryForm.addEventListener("submit", (event) => {
     return;
   }
 
-  const exists = state.categories.some((category) => category.toLowerCase() === rawName.toLowerCase());
-  if (exists) {
-    categoryForm.reset();
-    return;
-  }
+  try {
+    state.saving = true;
+    state.error = "";
+    renderStatus();
 
-  state.categories.push(rawName);
-  state.categories.sort((left, right) => left.localeCompare(right));
-  saveData(STORAGE_KEYS.categories, state.categories);
-  categoryForm.reset();
-  render();
+    await apiFetch("/api/categories", {
+      method: "POST",
+      body: JSON.stringify({ name: rawName }),
+    });
+
+    categoryForm.reset();
+    await loadAppData();
+  } catch (error) {
+    state.error = error.message;
+    renderStatus();
+  } finally {
+    state.saving = false;
+    renderStatus();
+  }
 });
 
+async function loadAppData() {
+  try {
+    state.loading = true;
+    state.error = "";
+    render();
+
+    const data = await apiFetch("/api/bootstrap");
+    state.categories = normalizeCategories(data.categories);
+    state.expenses = normalizeExpenses(data.expenses);
+  } catch (error) {
+    state.error = error.message;
+  } finally {
+    state.loading = false;
+    render();
+  }
+}
+
 function render() {
+  renderStatus();
   renderCategoryOptions();
   renderCategoryChips();
   renderDashboard();
   renderExpenses();
+  syncFormState();
+}
+
+function renderStatus() {
+  if (state.error) {
+    syncStatus.textContent = state.error;
+    syncStatus.dataset.variant = "error";
+    return;
+  }
+
+  if (state.loading) {
+    syncStatus.textContent = "Loading expenses...";
+    syncStatus.dataset.variant = "info";
+    return;
+  }
+
+  if (state.saving) {
+    syncStatus.textContent = "Saving...";
+    syncStatus.dataset.variant = "info";
+    return;
+  }
+
+  syncStatus.textContent = "Synced";
+  syncStatus.dataset.variant = "success";
+}
+
+function syncFormState() {
+  const disabled = state.loading || state.saving;
+  Array.from(expenseForm.elements).forEach((element) => {
+    element.disabled = disabled || (!state.categories.length && element.name === "category");
+  });
+  Array.from(categoryForm.elements).forEach((element) => {
+    element.disabled = disabled;
+  });
 }
 
 function renderCategoryOptions() {
@@ -90,13 +163,13 @@ function renderCategoryOptions() {
   if (!state.categories.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "Add a category first";
+    option.textContent = state.loading ? "Loading categories..." : "Add a category first";
     expenseCategorySelect.append(option);
     expenseCategorySelect.disabled = true;
     return;
   }
 
-  expenseCategorySelect.disabled = false;
+  expenseCategorySelect.disabled = state.loading || state.saving;
 
   state.categories.forEach((category) => {
     const option = document.createElement("option");
@@ -108,6 +181,11 @@ function renderCategoryOptions() {
 
 function renderCategoryChips() {
   categoryList.innerHTML = "";
+
+  if (state.loading) {
+    categoryList.innerHTML = `<div class="empty-state">Loading categories...</div>`;
+    return;
+  }
 
   if (!state.categories.length) {
     categoryList.innerHTML = `<div class="empty-state">No categories yet. Add one to start tracking expenses.</div>`;
@@ -126,7 +204,10 @@ function renderCategoryChips() {
     button.type = "button";
     button.className = "delete-button";
     button.textContent = "Delete";
-    button.addEventListener("click", () => deleteCategory(category));
+    button.disabled = state.loading || state.saving;
+    button.addEventListener("click", async () => {
+      await deleteCategory(category);
+    });
 
     chip.append(label, button);
     categoryList.append(chip);
@@ -135,8 +216,7 @@ function renderCategoryChips() {
 
 function renderDashboard() {
   const currentWeek = buildCurrentWeek(state.expenses);
-  const currentExpenses = currentWeek.expenses;
-  const currentTotal = sumExpenses(currentExpenses);
+  const currentTotal = sumExpenses(currentWeek.expenses);
 
   periodTotal.textContent = currency(currentTotal);
   periodLabel.textContent = currentWeek.label;
@@ -147,6 +227,11 @@ function renderDashboard() {
 
 function renderChart(week) {
   chart.innerHTML = "";
+
+  if (state.loading) {
+    chart.innerHTML = `<div class="empty-state">Loading dashboard...</div>`;
+    return;
+  }
 
   if (!week.total) {
     chart.innerHTML = `<div class="empty-state">No expenses in this week yet. Add one to populate the dashboard.</div>`;
@@ -196,6 +281,11 @@ function renderChart(week) {
 function renderExpenses() {
   expenseList.innerHTML = "";
 
+  if (state.loading) {
+    expenseList.innerHTML = `<div class="empty-state">Loading expenses...</div>`;
+    return;
+  }
+
   if (!state.expenses.length) {
     expenseList.innerHTML = `<div class="empty-state">No expenses logged yet.</div>`;
     return;
@@ -212,7 +302,13 @@ function renderExpenses() {
     fragment.querySelector(".expense-note").textContent = expense.note || "No note";
     fragment.querySelector(".expense-amount").textContent = currency(expense.amount);
     fragment.querySelector(".expense-date").textContent = friendlyDate(expense.date);
-    fragment.querySelector(".delete-expense").addEventListener("click", () => deleteExpense(expense.id));
+
+    const deleteButton = fragment.querySelector(".delete-expense");
+    deleteButton.disabled = state.loading || state.saving;
+    deleteButton.addEventListener("click", async () => {
+      await deleteExpense(expense.id);
+    });
+
     expenseList.append(fragment);
   });
 }
@@ -236,21 +332,44 @@ function buildCurrentWeek(expenses) {
   };
 }
 
-function deleteCategory(categoryToDelete) {
-  state.categories = state.categories.filter((category) => category !== categoryToDelete);
-  saveData(STORAGE_KEYS.categories, state.categories);
+async function deleteCategory(categoryToDelete) {
+  try {
+    state.saving = true;
+    state.error = "";
+    render();
 
-  if (!state.categories.length) {
-    expenseForm.reset();
+    await apiFetch(`/api/categories?name=${encodeURIComponent(categoryToDelete)}`, {
+      method: "DELETE",
+    });
+
+    await loadAppData();
+  } catch (error) {
+    state.error = error.message;
+    renderStatus();
+  } finally {
+    state.saving = false;
+    render();
   }
-
-  render();
 }
 
-function deleteExpense(expenseId) {
-  state.expenses = state.expenses.filter((expense) => expense.id !== expenseId);
-  saveData(STORAGE_KEYS.expenses, state.expenses);
-  render();
+async function deleteExpense(expenseId) {
+  try {
+    state.saving = true;
+    state.error = "";
+    render();
+
+    await apiFetch(`/api/expenses?id=${encodeURIComponent(expenseId)}`, {
+      method: "DELETE",
+    });
+
+    await loadAppData();
+  } catch (error) {
+    state.error = error.message;
+    renderStatus();
+  } finally {
+    state.saving = false;
+    render();
+  }
 }
 
 function totalsByCategory(expenses) {
@@ -321,15 +440,39 @@ function colorForIndex(index) {
   return COLORS[index % COLORS.length];
 }
 
-function loadData(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch (error) {
-    return fallback;
-  }
+function normalizeCategories(categories) {
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const names = safeCategories
+    .map((category) => typeof category === "string" ? category : category.name)
+    .filter(Boolean);
+
+  return names.length ? names : [...DEFAULT_CATEGORIES];
 }
 
-function saveData(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+function normalizeExpenses(expenses) {
+  return Array.isArray(expenses) ? expenses : [];
+}
+
+async function apiFetch(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message = payload && payload.error ? payload.error : "Something went wrong while syncing data.";
+    throw new Error(message);
+  }
+
+  return payload;
 }
